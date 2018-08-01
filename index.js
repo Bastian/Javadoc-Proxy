@@ -2,59 +2,81 @@ const http = require('http');
 const request = require('request');
 const async = require('async');
 
+// Log all uncaught exceptions
+process.on('uncaughtException', function(err) {
+    console.log('Caught exception: ' + err);
+});
+
 // Create a new server on port 80
 http.createServer(function (req, res) {
 
-    // Matches the root of the page, e.g. '', '/', '?a=b', '/?a=b'
-    if (/^\/?(\?.*)?$/gm.exec(req.url) !== null) {
-        // Redirect to the latest snapshot
-        return redirectToLatestSnapshot(res, 'api');
-    }
+    try {
+        // Matches the root of the page, e.g. '', '/', '?a=b', '/?a=b'
+        if (/^\/?(\?.*)?$/gm.exec(req.url) !== null) {
+            // Redirect to the latest snapshot
+            return redirectToLatestSnapshot(res, 'api');
+        }
 
-    // Matches url which look like /api and similar
-    let match = /^\/(api|core)\/?(\?.*)?$/gm.exec(req.url);
-    if (match !== null) {
-        let type = match[1];
-        // Redirect to the latest snapshot
-        return redirectToLatestSnapshot(res, type);
-    }
+        // Matches url which look like /api and similar
+        let match = /^\/(api|core)\/?(\?.*)?$/gm.exec(req.url);
+        if (match !== null) {
+            let type = match[1];
+            // Redirect to the latest snapshot
+            return redirectToLatestSnapshot(res, type);
+        }
 
-    // Matches url which look like /build/latest and similar
-    match = /^\/(api|core)\/build\/latest\/?/gm.exec(req.url);
-    if (match !== null) {
-        let type = match[1];
-        // Redirect to the latest snapshot
-        return redirectToLatestSnapshot(res, type);
-    }
+        // Matches url which look like /build/latest and similar
+        match = /^\/(api|core)\/build\/latest\/?/gm.exec(req.url);
+        if (match !== null) {
+            let type = match[1];
+            // Redirect to the latest snapshot
+            return redirectToLatestSnapshot(res, type);
+        }
 
-    // Matches urls which start with /build/1234/ (1234 = any build id)
-    match = /^\/(api|core)\/build\/(\d+)\//gm.exec(req.url);
-    if (match !== null) {
-        let type = match[1];
-        let buildId = match[2];
-        return proxyJavadocsByBuildId(res, req, buildId, type);
-    }
+        // Matches urls which start with /build/1234/ (1234 = any build id)
+        match = /^\/(api|core)\/build\/(\d+)\//gm.exec(req.url);
+        if (match !== null) {
+            let type = match[1];
+            let buildId = match[2];
+            return proxyJavadocsByBuildId(res, req, buildId, type);
+        }
 
-    // Like above, but without the slash at the end
-    match = /^\/(api|core)\/build\/(\d+)/gm.exec(req.url);
-    if (match !== null) {
-        let type = match[1];
-        let buildId = match[2];
-        // We want an url which ends with a slash
-        return redirect(res, `/${type}/build/${buildId}/`);
-    }
+        // Like above, but without the slash at the end
+        match = /^\/(api|core)\/build\/(\d+)/gm.exec(req.url);
+        if (match !== null) {
+            let type = match[1];
+            let buildId = match[2];
+            // We want an url which ends with a slash
+            return redirect(res, `/${type}/build/${buildId}/`);
+        }
 
-    // If no type/artifact was given, redirect to api
-    match = /^\/build\/(\d+|latest)/gm.exec(req.url);
-    if (match !== null) {
-        let buildId = match[1];
-        // We want an url which ends with a slash
-        return redirect(res, `/api/build/${buildId}/`);
-    }
+        // If no type/artifact was given, redirect to api
+        match = /^\/build\/(\d+|latest)/gm.exec(req.url);
+        if (match !== null) {
+            let buildId = match[1];
+            // We want an url which ends with a slash
+            return redirect(res, `/api/build/${buildId}/`);
+        }
 
-    render404Page(res);
+        return render404Page(res);
+    } catch (e) {
+        return renderErrorPage(res, `Error: ${e.message}`);
+    }
 
 }).listen(80);
+
+/**
+ * Renders a 500 page.
+ *
+ * @param res The response to which the site should be sent.
+ * @param message The message to display.
+ */
+function renderErrorPage(res, message) {
+    // TODO make this fancier
+    res.writeHead(500);
+    res.write(message);
+    res.end();
+}
 
 /**
  * Renders the 404 page.
@@ -77,7 +99,7 @@ function render404Page(res) {
 function redirectToLatestSnapshot(res, type) {
     getLatestBuildId(function (error, buildId) {
         if (error) {
-            return console.log(error);
+            return renderErrorPage(res, `Error: ${error.message}`);
         }
         return redirect(res, `/${type}/build/${buildId}/`);
     });
@@ -129,6 +151,9 @@ function proxyJavadocsByBuildId(res, req, buildId, type) {
             callback(null, fileName);
         }
     ], function (error, fileName) {
+        if (error) {
+            return renderErrorPage(res, `Error: ${error.message}`);
+        }
         if (fileName === null) {
             return render404Page(res);
         }
@@ -152,7 +177,11 @@ function getLatestBuildId(callback) {
         if (error) {
             return callback(error);
         }
-        return callback(null, JSON.parse(body).id);
+        try {
+            return callback(null, JSON.parse(body).id);
+        } catch (e) {
+            return callback(e);
+        }
     });
 }
 
