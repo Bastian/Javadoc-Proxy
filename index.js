@@ -196,6 +196,7 @@ function proxySite(res, url) {
     request({
         url: url
     }, function (error, response, body) {
+        response.headers['Access-Control-Allow-Origin'] = '*';
         res.writeHead(response.statusCode, response.headers);
         res.write(body);
         res.end();
