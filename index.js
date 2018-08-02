@@ -113,7 +113,8 @@ function redirectToLatestSnapshot(res, type) {
  */
 function redirect(res, url) {
     res.writeHead(302, {
-        'Location': url
+        'Location': url,
+        'Access-Control-Allow-Origin': '*'
     });
     res.end();
 }
