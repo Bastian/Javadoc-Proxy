@@ -17,8 +17,17 @@ http.createServer(function (req, res) {
             return redirectToLatestSnapshot(res, 'api');
         }
 
+        // Matches url wgich looks like /rest-api/latest-version/[api|core]/[release|build] and similar
+        let match = /^\/rest-api\/latest-version\/(api|core)\/(release|build)\/?(\?.*)?$/gm.exec(req.url);
+        if (match !== null) {
+            let type = match[1];
+            let versionType = match[2];
+            // Show the latest version
+            return showLatestVersion(res, type, versionType);
+        }
+
         // Matches url which look like /api and similar
-        let match = /^\/(api|core)\/?(\?.*)?$/gm.exec(req.url);
+        match = /^\/(api|core)\/?(\?.*)?$/gm.exec(req.url);
         if (match !== null) {
             let type = match[1];
             // Redirect to the latest snapshot
@@ -79,6 +88,21 @@ function renderErrorPage(res, message) {
 }
 
 /**
+ * Renders a rest page.
+ *
+ * @param res The response to which the site should be sent.
+ * @param jsonData The data to display.
+ */
+function renderRestPage(res, jsonData) {
+    res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json; charset=utf-8'
+    });
+    res.write(JSON.stringify(jsonData));
+    res.end();
+}
+
+/**
  * Renders the 404 page.
  *
  * @param res The response to which the site should be sent.
@@ -103,6 +127,30 @@ function redirectToLatestSnapshot(res, type) {
         }
         return redirect(res, `/${type}/build/${buildId}/`);
     });
+}
+
+/**
+ * Redirects to the latest snapshot.
+ *
+ * @param res The response to redirect.
+ * @param type The type, either 'api' or 'core'
+ * @param versionType The version type, either 'release' or 'build'
+ */
+function showLatestVersion(res, type, versionType) {
+    if (versionType.toLowerCase() === 'build') {
+        getLatestBuildId(function (error, buildId) {
+            if (error) {
+                return renderErrorPage(res, `Error: ${error.message}`);
+            }
+            return renderRestPage(res, {
+                build_id: buildId
+            });
+        });
+    } else {
+        return renderRestPage(res, {
+            version: '3.0.0' // TODO
+        });
+    }
 }
 
 /**
