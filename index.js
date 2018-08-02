@@ -17,13 +17,12 @@ http.createServer(function (req, res) {
             return redirectToLatestSnapshot(res, 'api');
         }
 
-        // Matches url wgich looks like /rest-api/latest-version/[api|core]/[release|build] and similar
-        let match = /^\/rest-api\/latest-version\/(api|core)\/(release|build)\/?(\?.*)?$/gm.exec(req.url);
+        // Matches url which looks like /rest-api/latest-version/[release|build]
+        let match = /^\/rest\/latest-version\/(release|build)\/?(\?.*)?$/gm.exec(req.url);
         if (match !== null) {
-            let type = match[1];
-            let versionType = match[2];
+            let versionType = match[1];
             // Show the latest version
-            return showLatestVersion(res, type, versionType);
+            return showLatestVersion(res, versionType);
         }
 
         // Matches url which look like /api and similar
@@ -133,10 +132,9 @@ function redirectToLatestSnapshot(res, type) {
  * Redirects to the latest snapshot.
  *
  * @param res The response to redirect.
- * @param type The type, either 'api' or 'core'
  * @param versionType The version type, either 'release' or 'build'
  */
-function showLatestVersion(res, type, versionType) {
+function showLatestVersion(res, versionType) {
     if (versionType.toLowerCase() === 'build') {
         getLatestBuildId(function (error, buildId) {
             if (error) {
