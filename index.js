@@ -277,7 +277,6 @@ function proxyJavadocsByBuildId(res, req, buildId, type, project) {
         }
         let urlAppendix = req.url.replace(`/${type}/build/${buildId}`, '').replace(/\/(api|core)\/v\/[\d\\.]+/, '');
         urlAppendix = urlAppendix === '' || urlAppendix === '/' ? '/index.html' : urlAppendix;
-        console.log(`https://ci.javacord.org/repository/download/${project}/${buildId}:id/javacord-${type}/${fileName}%21${urlAppendix}`);
         return proxySite(res, `https://ci.javacord.org/repository/download/${project}/${buildId}:id/javacord-${type}/${fileName}%21${urlAppendix}`);
     });
 }
