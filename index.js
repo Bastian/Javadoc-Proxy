@@ -14,7 +14,7 @@ http.createServer(function (req, res) {
         // Matches the root of the page, e.g. '', '/', '?a=b', '/?a=b'
         if (/^\/?(\?.*)?$/gm.exec(req.url) !== null) {
             // Redirect to the latest snapshot
-            return showLatestRelease(res, 'api');
+            return redirectToLatestRelease(res, 'api');
         }
 
         // Matches url which looks like /rest-api/latest-version/[release|build]
@@ -22,7 +22,14 @@ http.createServer(function (req, res) {
         if (match !== null) {
             let versionType = match[1];
             // Show the latest version
-            return showLatestRelease(res, versionType);
+            return showLatestVersion(res, versionType);
+        }
+
+        // Matches url which looks like /rest-api/versions/[release|build]
+        match = /^\/rest\/versions\/?(\?.*)?$/gm.exec(req.url);
+        if (match !== null) {
+            // Show the release versions
+            return showVersions(res);
         }
 
         // Matches url which look like /api and similar
@@ -169,12 +176,12 @@ function redirectToLatestRelease(res, type) {
 }
 
 /**
- * Redirects to the latest snapshot.
+ * Shows the latest version.
  *
  * @param res The response to redirect.
  * @param versionType The version type, either 'release' or 'build'
  */
-function showLatestRelease(res, versionType) {
+function showLatestVersion(res, versionType) {
     if (versionType.toLowerCase() === 'build') {
         getLatestBuildId(function (error, buildId) {
             if (error) {
@@ -195,6 +202,27 @@ function showLatestRelease(res, versionType) {
         });
     }
 }
+
+/**
+ * Shows all release versions.
+ *
+ * @param res The response to redirect.
+ */
+function showVersions(res) {
+    getAllReleases(function (error, versions) {
+        if (error) {
+            return renderErrorPage(res, `Error: ${error.message}`);
+        }
+        let versionArray = [];
+        for (let version in versions) {
+            if (versions.hasOwnProperty(version)) {
+                versionArray.push(version);
+            }
+        }
+        return renderRestPage(res, versionArray);
+    });
+}
+
 
 /**
  * Redirects to the given url.
