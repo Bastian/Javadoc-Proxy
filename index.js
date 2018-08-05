@@ -14,7 +14,7 @@ http.createServer(function (req, res) {
         // Matches the root of the page, e.g. '', '/', '?a=b', '/?a=b'
         if (/^\/?(\?.*)?$/gm.exec(req.url) !== null) {
             // Redirect to the latest snapshot
-            return redirectToLatestSnapshot(res, 'api');
+            return showLatestRelease(res, 'api');
         }
 
         // Matches url which looks like /rest-api/latest-version/[release|build]
