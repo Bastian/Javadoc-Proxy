@@ -22,7 +22,7 @@ http.createServer(function (req, res) {
         if (match !== null) {
             let versionType = match[1];
             // Show the latest version
-            return showLatestVersion(res, versionType);
+            return showLatestRelease(res, versionType);
         }
 
         // Matches url which look like /api and similar
@@ -30,7 +30,7 @@ http.createServer(function (req, res) {
         if (match !== null) {
             let type = match[1];
             // Redirect to the latest snapshot
-            return redirectToLatestVersion(res, type);
+            return redirectToLatestRelease(res, type);
         }
 
         // Matches url which look like /build/latest and similar
@@ -46,7 +46,7 @@ http.createServer(function (req, res) {
         if (match !== null) {
             let type = match[1];
             // Redirect to the latest snapshot
-            return redirectToLatestVersion(res, type);
+            return redirectToLatestRelease(res, type);
         }
 
         // Matches urls which start with /build/1234/ (1234 = any build id)
@@ -159,8 +159,8 @@ function redirectToLatestSnapshot(res, type) {
  * @param res The response to redirect.
  * @param type The type, either 'api' or 'core'
  */
-function redirectToLatestVersion(res, type) {
-    getLatestReleaseVersion(function (error, versionNumber) {
+function redirectToLatestRelease(res, type) {
+    getLatestRelease(function (error, versionNumber) {
         if (error) {
             return renderErrorPage(res, `Error: ${error.message}`);
         }
@@ -174,7 +174,7 @@ function redirectToLatestVersion(res, type) {
  * @param res The response to redirect.
  * @param versionType The version type, either 'release' or 'build'
  */
-function showLatestVersion(res, versionType) {
+function showLatestRelease(res, versionType) {
     if (versionType.toLowerCase() === 'build') {
         getLatestBuildId(function (error, buildId) {
             if (error) {
@@ -185,7 +185,7 @@ function showLatestVersion(res, versionType) {
             });
         });
     } else {
-        getLatestReleaseVersion(function (error, versionNumber) {
+        getLatestRelease(function (error, versionNumber) {
             if (error) {
                 return renderErrorPage(res, `Error: ${error.message}`);
             }
@@ -219,7 +219,7 @@ function redirect(res, url) {
  * @param type The type, either 'api' or 'core'
  */
 function proxyJavadocsByVersionNumber(res, req, versionNumber, type) {
-    getAllReleaseVersions(function (error, versions) {
+    getAllReleases(function (error, versions) {
         if (error) {
             return renderErrorPage(res, `Error: ${error.message}`);
         }
@@ -287,7 +287,7 @@ function proxyJavadocsByBuildId(res, req, buildId, type, project) {
  *
  * @param callback A object, with fields where the key is the version number and the value the build id.
  */
-function getAllReleaseVersions(callback) {
+function getAllReleases(callback) {
     let options = {
         url: 'https://ci.javacord.org/app/rest/builds/?locator=buildType:(id:Javacord_Release),status:SUCCESS&guest=1',
         headers: { 'Accept': 'application/json' }
@@ -337,7 +337,7 @@ function getLatestBuildId(callback) {
  *
  * @param callback The callback.
  */
-function getLatestReleaseVersion(callback) {
+function getLatestRelease(callback) {
     let options = {
         url: 'https://ci.javacord.org/app/rest/builds/buildType:(id:Javacord_Release),status:SUCCESS?guest=1',
         headers: { 'Accept': 'application/json' }
