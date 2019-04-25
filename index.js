@@ -344,7 +344,7 @@ function getAllReleases(callback) {
  */
 function getLatestBuildId(callback) {
     let options = {
-        url: 'https://ci.javacord.org/app/rest/builds/buildType:(id:Javacord_PublishSnapshots),status:SUCCESS,branch:v_3?guest=1',
+        url: 'https://ci.javacord.org/app/rest/builds/buildType:(id:Javacord_PublishSnapshots),status:SUCCESS,branch:development?guest=1',
         headers: { 'Accept': 'application/json' }
     };
     request(options, function (error, response, body) {
